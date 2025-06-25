@@ -1,0 +1,63 @@
+A51 MACRO ASSEMBLER  MAC_ASM                                                              04/10/2025 19:21:58 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\MAC_ASM.obj
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE MAC_ASM.asm SET(SMALL) DEBUG PRINT(.\Listings\MAC_ASM.lst) OBJECT(.\Obj
+                      ects\MAC_ASM.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     PUBLIC MAC
+----                   2     CSEG AT 0100H
+                       3     
+0100                   4     MAC:
+0100 7870              5         MOV R0, #70H       ; pointer to a1, a2, a3
+0102 7973              6         MOV R1, #73H       ; pointer to b1, b2, b3
+                       7     
+0104 E4                8         CLR A
+0105 F551              9         MOV 51H, A         ; clear MSB
+0107 F552             10         MOV 52H, A         ; clear LSB
+0109 F550             11         MOV 50H, A         ; temporary carry storage
+                      12     
+010B 7A03             13         MOV R2, #03H       ; loop counter
+                      14     
+010D                  15     MAC_LOOP:
+010D E6               16         MOV A, @R0         ; A = ai
+010E 87F0             17         MOV B, @R1         ; B = bi
+0110 A4               18         MUL AB             ; A*B => A(low), B(high)
+                      19     
+                      20         ; Add A (LSB of product) to 52H
+0111 A200             21         MOV C, 0           ; clear carry
+0113 2552             22         ADD A, 52H
+0115 F552             23         MOV 52H, A
+                      24     
+                      25         ; Add B (MSB of product) + carry to 51H
+0117 E5F0             26         MOV A, B
+0119 3551             27         ADDC A, 51H
+011B F551             28         MOV 51H, A
+                      29     
+011D 08               30         INC R0
+011E 09               31         INC R1
+011F DAEC             32         DJNZ R2, MAC_LOOP
+                      33     
+0121 22               34         RET
+                      35     
+                      36     END
+A51 MACRO ASSEMBLER  MAC_ASM                                                              04/10/2025 19:21:58 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+B. . . . . . . . .  D ADDR   00F0H   A   
+MAC. . . . . . . .  C ADDR   0100H   A   
+MAC_LOOP . . . . .  C ADDR   010DH   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

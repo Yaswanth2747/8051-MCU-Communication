@@ -1,0 +1,162 @@
+C51 COMPILER V9.60.7.0   SLAVE_SPI                                                         04/10/2025 19:21:58 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE SLAVE_SPI
+OBJECT MODULE PLACED IN .\Objects\slave_SPI.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE slave_SPI.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings
+                    -\slave_SPI.lst) TABS(2) OBJECT(.\Objects\slave_SPI.obj)
+
+line level    source
+
+   1          /*
+   2           * SPI Slave Code with MAC integration v2.0
+   3           * 
+   4           * This file contains the implementation of the SPI Slave, developed as part of the EE337 - Microprocessor
+             -s Laboratory course 
+   5           * during the academic year 2024–25 at the Indian Institute of Technology Bombay.
+   6           * also find the mac.asm file used to make the MAC CALL.
+   7           *
+   8           * This code is intended solely for academic use.
+   9           * 
+  10           * Authors:
+  11           * - Yaswanth Ram Kumar (Roll No: 23B1277)
+  12           * - Pragyan Paramita Behera (Roll No: 23B1278)
+  13           * 
+  14           * Department of Electrical Engineering,  
+  15           * Indian Institute of Technology Bombay,  
+  16           * Powai, Mumbai - 400076, India.
+  17           */
+  18          
+  19          #include <at89c5131.h>
+  20          #include "lcd.h"
+  21          
+  22          extern void MAC(void);
+  23          unsigned char *addr_70 = (unsigned char *)0x70; // a1
+  24          unsigned char *addr_71 = (unsigned char *)0x71; // a2
+  25          unsigned char *addr_72 = (unsigned char *)0x72; // a3
+  26          unsigned char *addr_73 = (unsigned char *)0x73; // b1
+  27          unsigned char *addr_74 = (unsigned char *)0x74; // b2
+  28          unsigned char *addr_75 = (unsigned char *)0x75; // b3
+  29          
+  30          unsigned char *addr_52 = (unsigned char *)0x52; // final MAC sum
+  31          unsigned int sum_asm;
+  32          
+  33          void delay() {
+  34   1          int i;
+  35   1          for(i = 0; i < 5000; i++);
+  36   1      }
+  37          
+  38          bit is_prime(unsigned char num) {
+  39   1          unsigned char i;
+  40   1          if (num < 2) return 0;
+  41   1          for (i = 2; i <= num / 2; i++) {
+  42   2              if (num % i == 0)
+  43   2                  return 0;
+  44   2          }
+  45   1          return 1;
+  46   1      }
+  47          
+  48          unsigned char values[6];  // stores a1, a2, a3, b1, b2, b3
+  49          unsigned char index = 0;
+  50          
+  51          void slave_greet_lcd() {
+  52   1          msdelay(10);
+  53   1          lcd_cmd(0x80);
+C51 COMPILER V9.60.7.0   SLAVE_SPI                                                         04/10/2025 19:21:58 PAGE 2   
+
+  54   1          msdelay(4);
+  55   1          lcd_write_string("SPI Slave");
+  56   1          lcd_cmd(0xC0);
+  57   1          msdelay(4);
+  58   1          lcd_write_string("Waiting");
+  59   1          msdelay(500);
+  60   1          lcd_write_char('.');
+  61   1          msdelay(500);
+  62   1          lcd_write_char('.');
+  63   1          msdelay(500);
+  64   1          lcd_write_char('.');
+  65   1          msdelay(500);
+  66   1      }
+  67          
+  68          void main() {
+  69   1          unsigned char received;
+  70   1          unsigned char sum;
+  71   1          unsigned char buffer[6] = {0, 0, 0, 0, 0, '\0'};
+  72   1      
+  73   1          lcd_init();
+  74   1          slave_greet_lcd();
+  75   1      
+  76   1          SPCON = 0x6F;  // Slave mode, Fclk/16, CPOL=1, CPHA=1, SSDIS=1
+  77   1          msdelay(500);
+  78   1      
+  79   1          lcd_cmd(0x01);
+  80   1          lcd_cmd(0x80);
+  81   1          lcd_write_string("Waiting Data");
+  82   1      
+  83   1          while (1) {
+  84   2              while (!(SPSTA & 0x80));  // Wait for transfer complete
+  85   2              received = SPDAT;
+  86   2      
+  87   2              values[index] = received;
+  88   2      
+  89   2              lcd_cmd(0x01);
+  90   2              lcd_cmd(0x80);
+  91   2              lcd_write_string("Got Data:");
+  92   2              lcd_cmd(0xC0);
+  93   2              int_to_string(received, buffer);
+  94   2              lcd_write_string(buffer);
+  95   2              msdelay(1000);
+  96   2      
+  97   2              index++;
+  98   2      
+  99   2              if (index == 6) {
+ 100   3                  // Assign values to memory locations
+ 101   3                  *addr_70 = values[0]; // a1
+ 102   3                  *addr_71 = values[1]; // a2
+ 103   3                  *addr_72 = values[2]; // a3
+ 104   3                  *addr_73 = values[3]; // b1
+ 105   3                  *addr_74 = values[4]; // b2
+ 106   3                  *addr_75 = values[5]; // b3
+ 107   3      
+ 108   3                  MAC();  // Assembly function
+ 109   3      
+ 110   3                  sum_asm = *addr_52;  // Neglect upper nibble
+ 111   3                  sum = (unsigned char)sum_asm;
+ 112   3      
+ 113   3                  lcd_cmd(0x01);
+ 114   3                  lcd_cmd(0x80);
+ 115   3                  lcd_write_string("MAC Sum:");
+C51 COMPILER V9.60.7.0   SLAVE_SPI                                                         04/10/2025 19:21:58 PAGE 3   
+
+ 116   3                  int_to_string(sum, buffer);
+ 117   3                  lcd_write_string(buffer);
+ 118   3                  msdelay(1000);
+ 119   3      
+ 120   3                  if (is_prime(sum)) {
+ 121   4                      SPDAT = 1;  // Sum is prime
+ 122   4                      lcd_cmd(0xC0);
+ 123   4                      lcd_write_string("Sum is Prime");
+ 124   4                  } else {
+ 125   4                      SPDAT = 2;  // Not prime
+ 126   4                      lcd_cmd(0xC0);
+ 127   4                      lcd_write_string("Not Prime");
+ 128   4                  }
+ 129   3      
+ 130   3                  while (1);  // Halt further reception
+ 131   3              }
+ 132   2          }
+ 133   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    731    ----
+   CONSTANT SIZE    =     79    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     30      16
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

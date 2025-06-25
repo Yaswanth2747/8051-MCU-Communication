@@ -1,0 +1,40 @@
+A51 MACRO ASSEMBLER  ADD_ASSEMBLY                                                         04/10/2025 18:55:01 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\add_assembly.obj
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE add_assembly.asm SET(SMALL) DEBUG PRINT(.\Listings\add_assembly.lst) OB
+                      JECT(.\Objects\add_assembly.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ; add.asm
+                       2     ; Adds values from 0x30 and 0x31, stores result in 0x32
+                       3     
+                       4     PUBLIC ADD_ASM
+                       5     ;NAME ADD_FILE
+                       6     
+----                   7     CSEG AT 0100H    ; ?? Place code starting from 0x100 (safe area)
+                       8     
+0100                   9     ADD_ASM:
+0100 E530             10         MOV A, 30H
+0102 2531             11         ADD A, 31H
+0104 F532             12         MOV 32H, A
+0106 22               13         RET
+                      14     
+                      15     END
+A51 MACRO ASSEMBLER  ADD_ASSEMBLY                                                         04/10/2025 18:55:01 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ADD_ASM. . . . . .  C ADDR   0100H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

@@ -1,0 +1,1 @@
+"add_assembly.asm" SET (SMALL) DEBUG PRINT(.\Listings\add_assembly.lst) OBJECT(.\Objects\add_assembly.obj) EP

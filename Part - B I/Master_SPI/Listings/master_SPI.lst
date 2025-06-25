@@ -1,0 +1,115 @@
+C51 COMPILER V9.60.7.0   MASTER_SPI                                                        04/07/2025 14:14:32 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MASTER_SPI
+OBJECT MODULE PLACED IN .\Objects\master_SPI.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE master_SPI.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listing
+                    -s\master_SPI.lst) TABS(2) OBJECT(.\Objects\master_SPI.obj)
+
+line level    source
+
+   1          /*
+   2           * SPI Master Code
+   3           * 
+   4           * This file contains the implementation of the SPI Master, developed as part of the EE337 - Microprocesso
+             -rs Laboratory course 
+   5           * during the academic year 2024–25 at the Indian Institute of Technology Bombay.
+   6           * 
+   7           * This code is intended solely for academic use.
+   8           * 
+   9           * Authors:
+  10           * - Yaswanth Ram Kumar (Roll No: 23B1277)
+  11           * - Pragyan Paramita Behera (Roll No: 23B1278)
+  12           * 
+  13           * Department of Electrical Engineering,  
+  14           * Indian Institute of Technology Bombay,  
+  15           * Powai, Mumbai - 400076, India.
+  16           */
+  17          #include <at89c5131.h>
+  18          #include "lcd.h"
+  19          
+  20          void lcd_write_int(unsigned char num);  // Custom int print
+  21          
+  22          void master_greet_lcd() {
+  23   1          msdelay(10);
+  24   1          lcd_cmd(0x80);
+  25   1          msdelay(4);
+  26   1          lcd_write_string("SPI Master");
+  27   1      
+  28   1          lcd_cmd(0xC0);
+  29   1          msdelay(4);
+  30   1          lcd_write_string("Running");
+  31   1          msdelay(500);
+  32   1          lcd_write_char('.');
+  33   1          msdelay(500);
+  34   1          lcd_write_char('.');
+  35   1          msdelay(500);
+  36   1          lcd_write_char('.');
+  37   1          msdelay(500);
+  38   1      }
+  39          
+  40          
+  41          // Send and receive 1 byte over SPI
+  42          unsigned char spi_send(unsigned char dat) {
+  43   1          SPDAT = dat;
+  44   1          while (!(SPSTA & 0x80));  // wait for transfer complete
+  45   1          return SPDAT;
+  46   1      }
+  47          
+  48          void main(void) {
+  49   1          unsigned char response;
+  50   1          unsigned char prime1 = 7, prime2 = 13;
+  51   1      
+  52   1          lcd_init();
+  53   1          master_greet_lcd();
+C51 COMPILER V9.60.7.0   MASTER_SPI                                                        04/07/2025 14:14:32 PAGE 2   
+
+  54   1      
+  55   1          SPCON = 0x7F;  // Master mode, Fclk/16, CPOL=1, CPHA=1, SSDIS=1
+  56   1          msdelay(500);
+  57   1      
+  58   1          lcd_cmd(0x01);
+  59   1          lcd_cmd(0x80);
+  60   1          lcd_write_string("Sending Primes");
+  61   1      
+  62   1          msdelay(1000);
+  63   1          spi_send(prime1);
+  64   1          msdelay(1000);
+  65   1          spi_send(prime2);
+  66   1          msdelay(1000);
+  67   1      
+  68   1          lcd_cmd(0xC0);
+  69   1          lcd_write_string("Waiting Result");
+  70   1      
+  71   1          msdelay(1500);  // Wait so slave has time to send response
+  72   1      
+  73   1          response = spi_send(0x00);  // Dummy write to receive
+  74   1      
+  75   1          lcd_cmd(0x01);
+  76   1          lcd_cmd(0x80);
+  77   1          if (response == 1) {
+  78   2              lcd_write_string("Sum is Prime");
+  79   2          } else if (response == 2) {
+  80   2              lcd_write_string("Sum Not Prime");
+  81   2          } else {
+  82   2              lcd_write_string("Unexpected Val");
+  83   2              lcd_cmd(0xC0);
+  84   2              lcd_write_char(response+'0');
+  85   2          }
+  86   1      
+  87   1          while (1);
+  88   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    564    ----
+   CONSTANT SIZE    =     91    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      11
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

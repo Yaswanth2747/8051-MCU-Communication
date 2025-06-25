@@ -1,0 +1,1 @@
+"MAC_ASM.asm" SET (SMALL) DEBUG PRINT(.\Listings\MAC_ASM.lst) OBJECT(.\Objects\MAC_ASM.obj) EP

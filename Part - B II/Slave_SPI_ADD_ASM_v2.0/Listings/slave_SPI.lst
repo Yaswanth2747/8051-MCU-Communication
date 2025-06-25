@@ -1,0 +1,167 @@
+C51 COMPILER V9.60.7.0   SLAVE_SPI                                                         04/10/2025 18:57:48 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE SLAVE_SPI
+OBJECT MODULE PLACED IN .\Objects\slave_SPI.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE slave_SPI.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings
+                    -\slave_SPI.lst) TABS(2) OBJECT(.\Objects\slave_SPI.obj)
+
+line level    source
+
+   1          /*
+   2           * SPI Slave Code with add_assembly integration v2.0
+   3           * 
+   4           * This file contains the implementation of the SPI Slave, developed as part of the EE337 - Microprocessor
+             -s Laboratory course 
+   5           * during the academic year 2024–25 at the Indian Institute of Technology Bombay.
+   6           * also find the add_assembly.asm file used to make the addition CALL.
+   7           *
+   8           * This code is intended solely for academic use.
+   9           * 
+  10           * Authors:
+  11           * - Yaswanth Ram Kumar (Roll No: 23B1277)
+  12           * - Pragyan Paramita Behera (Roll No: 23B1278)
+  13           * 
+  14           * Department of Electrical Engineering,  
+  15           * Indian Institute of Technology Bombay,  
+  16           * Powai, Mumbai - 400076, India.
+  17           */
+  18          #include <at89c5131.h>
+  19          #include "lcd.h"
+  20          
+  21          extern void ADD_ASM(void);
+  22          unsigned char *addr_30 = (unsigned char *)0x30;
+  23          unsigned char *addr_31 = (unsigned char *)0x31;
+  24          unsigned char *addr_32 = (unsigned char *)0x32;
+  25          unsigned int sum_asm;
+  26          
+  27          void delay() {
+  28   1          int i;
+  29   1          for(i = 0; i < 5000; i++);
+  30   1      }
+  31          
+  32          bit is_prime(unsigned char num) {
+  33   1          unsigned char i;
+  34   1          if (num < 2) return 0;
+  35   1          for (i = 2; i <= num / 2; i++) {
+  36   2              if (num % i == 0)
+  37   2                  return 0;
+  38   2          }
+  39   1          return 1;
+  40   1      }
+  41          
+  42          unsigned char prime1 = 0, prime2 = 0;
+  43          bit received_first = 0;
+  44          
+  45          void slave_greet_lcd() {
+  46   1          msdelay(10);
+  47   1          lcd_cmd(0x80);
+  48   1          msdelay(4);
+  49   1          lcd_write_string("SPI Slave");
+  50   1          lcd_cmd(0xC0);
+  51   1          msdelay(4);
+  52   1          lcd_write_string("Waiting");
+  53   1          msdelay(500);
+C51 COMPILER V9.60.7.0   SLAVE_SPI                                                         04/10/2025 18:57:48 PAGE 2   
+
+  54   1          lcd_write_char('.');
+  55   1          msdelay(500);
+  56   1          lcd_write_char('.');
+  57   1          msdelay(500);
+  58   1          lcd_write_char('.');
+  59   1          msdelay(500);
+  60   1      }
+  61          
+  62          int a,b;
+  63          
+  64          void main() {
+  65   1          unsigned char received;
+  66   1          unsigned char sum;
+  67   1        
+  68   1        unsigned char buffer[6]={0,0,0,0,0,'\0'};
+  69   1          lcd_init();
+  70   1          slave_greet_lcd();
+  71   1      
+  72   1          SPCON = 0x6F;  // Slave mode, Fclk/16, CPOL=1, CPHA=1, SSDIS=1
+  73   1          msdelay(500);
+  74   1      
+  75   1          lcd_cmd(0x01);
+  76   1          lcd_cmd(0x80);
+  77   1          lcd_write_string("Waiting Data");
+  78   1      
+  79   1          while (1) {
+  80   2              while (!(SPSTA & 0x80));  // wait for transfer complete
+  81   2              received = SPDAT;
+  82   2      
+  83   2              if (!received_first) {
+  84   3                  prime1 = received;
+  85   3                  received_first = 1;
+  86   3                  lcd_cmd(0x01);
+  87   3                  lcd_cmd(0x80);
+  88   3                  lcd_write_string("Got Prime1:");
+  89   3                  lcd_cmd(0xC0);
+  90   3                  int_to_string(prime1,buffer);
+  91   3                  lcd_write_string(buffer);
+  92   3              } else {
+  93   3                  prime2 = received;
+  94   3                  lcd_cmd(0x01);
+  95   3                  lcd_cmd(0x80);
+  96   3                  lcd_write_string("Got Prime2:");
+  97   3                  lcd_cmd(0xC0);
+  98   3                  int_to_string(prime2,buffer);
+  99   3                  lcd_write_string(buffer);
+ 100   3                  msdelay(1000);
+ 101   3                
+ 102   3                  a = (int)prime1;  
+ 103   3                  b = (int)prime2;  
+ 104   3                  *addr_30 = a;
+ 105   3                  *addr_31 = b;
+ 106   3                  *addr_32 = 123;  // Set it manually first
+ 107   3                  ADD_ASM();
+ 108   3                  sum_asm = *addr_32;
+ 109   3                  sum = (unsigned char)sum_asm;
+ 110   3                
+ 111   3                  //sum = prime1 + prime2;
+ 112   3                  lcd_cmd(0x01);
+ 113   3                  lcd_cmd(0x80);
+ 114   3                  lcd_write_string("Sum:");
+ 115   3                  int_to_string(sum,buffer);
+C51 COMPILER V9.60.7.0   SLAVE_SPI                                                         04/10/2025 18:57:48 PAGE 3   
+
+ 116   3                  lcd_write_string(buffer);
+ 117   3                  msdelay(1000);
+ 118   3      
+ 119   3                  if (is_prime(sum)) {
+ 120   4                      SPDAT = 1;  // Prime
+ 121   4                      lcd_cmd(0xC0);
+ 122   4                      lcd_write_string("Sum is Prime");
+ 123   4                      while(1);
+ 124   4                  } else {
+ 125   4                      SPDAT = 2;  // Not prime
+ 126   4                      lcd_cmd(0xC0);
+ 127   4                      lcd_write_string("Not Prime");
+ 128   4                      while(1);
+ 129   4                  }
+ 130   3      
+ 131   3                  msdelay(1000);  // Allow master to read SPDAT before loop repeats
+ 132   3                  received_first = 0;
+ 133   3                  lcd_cmd(0x01);
+ 134   3                  lcd_cmd(0x80);
+ 135   3                  lcd_write_string("Waiting Data");
+ 136   3              } 
+ 137   2          }
+ 138   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    744    ----
+   CONSTANT SIZE    =     89    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     17      16
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

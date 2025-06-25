@@ -1,0 +1,5 @@
+".\Objects\STARTUP.obj",
+".\Objects\slave_SPI.obj",
+".\Objects\MAC_ASM.obj" 
+TO ".\Objects\slave_SPI" 
+PRINT(".\Listings\slave_SPI.m51") RAMSIZE(256) 

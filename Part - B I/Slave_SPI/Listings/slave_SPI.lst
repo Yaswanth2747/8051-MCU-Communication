@@ -1,0 +1,157 @@
+C51 COMPILER V9.60.7.0   SLAVE_SPI                                                         04/07/2025 14:15:01 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE SLAVE_SPI
+OBJECT MODULE PLACED IN .\Objects\slave_SPI.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE slave_SPI.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings
+                    -\slave_SPI.lst) TABS(2) OBJECT(.\Objects\slave_SPI.obj)
+
+line level    source
+
+   1          /*
+   2           * SPI Slave Code
+   3           * 
+   4           * This file contains the implementation of the SPI Slave, developed as part of the EE337 - Microprocessor
+             -s Laboratory course 
+   5           * during the academic year 2024–25 at the Indian Institute of Technology Bombay.
+   6           * 
+   7           * This code is intended solely for academic use.
+   8           * 
+   9           * Authors:
+  10           * - Yaswanth Ram Kumar (Roll No: 23B1277)
+  11           * - Pragyan Paramita Behera (Roll No: 23B1278)
+  12           * 
+  13           * Department of Electrical Engineering,  
+  14           * Indian Institute of Technology Bombay,  
+  15           * Powai, Mumbai - 400076, India.
+  16           */
+  17          #include <at89c5131.h>
+  18          #include "lcd.h"
+  19          
+  20          void lcd_write_int(unsigned char num);  // Custom int print
+  21          
+  22          void delay() {
+  23   1          int i;
+  24   1          for(i = 0; i < 5000; i++);
+  25   1      }
+  26          
+  27          bit is_prime(unsigned char num) {
+  28   1          unsigned char i;
+  29   1          if (num < 2) return 0;
+  30   1          for (i = 2; i <= num / 2; i++) {
+  31   2              if (num % i == 0)
+  32   2                  return 0;
+  33   2          }
+  34   1          return 1;
+  35   1      }
+  36          
+  37          unsigned char prime1 = 0, prime2 = 0;
+  38          bit received_first = 0;
+  39          
+  40          void slave_greet_lcd() {
+  41   1          msdelay(10);
+  42   1          lcd_cmd(0x80);
+  43   1          msdelay(4);
+  44   1          lcd_write_string("SPI Slave");
+  45   1      
+  46   1          lcd_cmd(0xC0);
+  47   1          msdelay(4);
+  48   1          lcd_write_string("Waiting");
+  49   1          msdelay(500);
+  50   1          lcd_write_char('.');
+  51   1          msdelay(500);
+  52   1          lcd_write_char('.');
+  53   1          msdelay(500);
+C51 COMPILER V9.60.7.0   SLAVE_SPI                                                         04/07/2025 14:15:01 PAGE 2   
+
+  54   1          lcd_write_char('.');
+  55   1          msdelay(500);
+  56   1      }
+  57          
+  58          
+  59          void main() {
+  60   1          unsigned char received;
+  61   1          unsigned char sum;
+  62   1        unsigned char buffer[6]={0,0,0,0,0,'\0'};
+  63   1          lcd_init();
+  64   1          slave_greet_lcd();
+  65   1      
+  66   1          SPCON = 0x6F;  // Slave mode, Fclk/16, CPOL=1, CPHA=1, SSDIS=1
+  67   1          msdelay(500);
+  68   1      
+  69   1          lcd_cmd(0x01);
+  70   1          lcd_cmd(0x80);
+  71   1          lcd_write_string("Waiting Data");
+  72   1      
+  73   1          while (1) {
+  74   2              while (!(SPSTA & 0x80));  // wait for transfer complete
+  75   2              received = SPDAT;
+  76   2      
+  77   2              if (!received_first) {
+  78   3                  prime1 = received;
+  79   3                  received_first = 1;
+  80   3      
+  81   3                  lcd_cmd(0x01);
+  82   3                  lcd_cmd(0x80);
+  83   3                  lcd_write_string("Got Prime1:");
+  84   3                  lcd_cmd(0xC0);
+  85   3                int_to_string(prime1,buffer);
+  86   3                  lcd_write_string(buffer);
+  87   3              } else {
+  88   3                  prime2 = received;
+  89   3      
+  90   3                  lcd_cmd(0x01);
+  91   3                  lcd_cmd(0x80);
+  92   3                  lcd_write_string("Got Prime2:");
+  93   3                  lcd_cmd(0xC0);
+  94   3                int_to_string(prime2,buffer);
+  95   3                  lcd_write_string(buffer);
+  96   3      
+  97   3                  msdelay(1000);
+  98   3      
+  99   3                  sum = prime1 + prime2;
+ 100   3                  lcd_cmd(0x01);
+ 101   3                  lcd_cmd(0x80);
+ 102   3                  lcd_write_string("Sum:");
+ 103   3                int_to_string(sum,buffer);
+ 104   3                  lcd_write_string(buffer);
+ 105   3      
+ 106   3                  msdelay(1000);
+ 107   3      
+ 108   3                  if (is_prime(sum)) {
+ 109   4                      SPDAT = 1;  // Prime
+ 110   4                      lcd_cmd(0xC0);
+ 111   4                      lcd_write_string("Sum is Prime");
+ 112   4                      while(1);
+ 113   4                  } else {
+ 114   4                      SPDAT = 2;  // Not prime
+ 115   4                      lcd_cmd(0xC0);
+C51 COMPILER V9.60.7.0   SLAVE_SPI                                                         04/07/2025 14:15:01 PAGE 3   
+
+ 116   4                      lcd_write_string("Not Prime");
+ 117   4                      while(1);
+ 118   4                  }
+ 119   3      
+ 120   3                  msdelay(1000);  // Allow master to read SPDAT before loop repeats
+ 121   3      
+ 122   3                  received_first = 0;
+ 123   3                  lcd_cmd(0x01);
+ 124   3                  lcd_cmd(0x80);
+ 125   3                  lcd_write_string("Waiting Data");
+ 126   3              }
+ 127   2          }
+ 128   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    686    ----
+   CONSTANT SIZE    =     89    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2      16
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

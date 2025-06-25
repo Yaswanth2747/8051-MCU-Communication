@@ -1,0 +1,4 @@
+".\Objects\STARTUP.obj",
+".\Objects\master_SPI.obj" 
+TO ".\Objects\LAB9b_Micro_23B1277" 
+PRINT(".\Listings\LAB9b_Micro_23B1277.m51") RAMSIZE(256) 
